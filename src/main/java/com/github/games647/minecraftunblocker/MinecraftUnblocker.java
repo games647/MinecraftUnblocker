@@ -20,7 +20,7 @@ public class MinecraftUnblocker {
         //show a default item
         selectItems.add("SELECT");
         //add all versions to the list by getting the folders
-        Stream.of(versionsFolder.list()).forEach((fileName) -> selectItems.add(fileName));
+        Stream.of(versionsFolder.list()).forEach(selectItems::add);
 
         //start a new window
         JFrame frame = new JFrame();
