@@ -1,10 +1,17 @@
 package com.github.games647.minecraftunblocker;
 
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+import org.json.simple.JSONValue;
+import org.json.simple.parser.ParseException;
+
+import javax.swing.JComboBox;
+import javax.swing.JOptionPane;
+
 import java.awt.Component;
 import java.awt.HeadlessException;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -14,23 +21,15 @@ import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import javax.swing.JComboBox;
-import javax.swing.JOptionPane;
-
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
-import org.json.simple.JSONValue;
-import org.json.simple.parser.ParseException;
-
 public class UnblockButtonListener implements ActionListener {
 
     private static final String UNBLOCK_SUFFIX = "-Unblock";
 
     private final JComboBox<String> list;
-    private final File versionsFolder;
+    private final Path versionsFolder;
     private final Component parentComp;
 
-    public UnblockButtonListener(JComboBox<String> list, File versionsFolder, Component parentComp) {
+    public UnblockButtonListener(JComboBox<String> list, Path versionsFolder, Component parentComp) {
         this.list = list;
         this.versionsFolder = versionsFolder;
         this.parentComp = parentComp;
@@ -39,24 +38,25 @@ public class UnblockButtonListener implements ActionListener {
     @Override
     public void actionPerformed(ActionEvent e) {
         String selectedVersion = (String) list.getSelectedItem();
-        File sourceFolder = new File(versionsFolder, selectedVersion);
-        if (!sourceFolder.exists() || !sourceFolder.isDirectory()) {
+        Path sourceFolder = versionsFolder.resolve(selectedVersion);
+        if (!Files.exists(sourceFolder) || !Files.isDirectory(sourceFolder)) {
             JOptionPane.showMessageDialog(parentComp, "Folder not found");
         } else {
             unblock(selectedVersion, sourceFolder);
         }
     }
 
-    private void unblock(String selectedVersion, File sourceFolder) throws HeadlessException {
-        File destinationDir = new File(versionsFolder, selectedVersion + UNBLOCK_SUFFIX);
-        destinationDir.mkdir();
+    private void unblock(String selectedVersion, Path sourceFolder) throws HeadlessException {
+        Path destinationDir = versionsFolder.resolve(selectedVersion + UNBLOCK_SUFFIX);
 
-        Path sourceJsonFile = new File(sourceFolder, selectedVersion + ".json").toPath();
-        Path targetJsonFile = new File(destinationDir, selectedVersion + UNBLOCK_SUFFIX + ".json").toPath();
+        Path sourceJsonFile = sourceFolder.resolve(selectedVersion + ".json");
+        Path targetJsonFile = destinationDir.resolve(selectedVersion + UNBLOCK_SUFFIX + ".json");
 
-        Path sourceJarFile = new File(sourceFolder, selectedVersion + ".jar").toPath();
-        Path targetJarFile = new File(destinationDir, selectedVersion + UNBLOCK_SUFFIX + ".jar").toPath();
+        Path sourceJarFile = sourceFolder.resolve(selectedVersion + ".jar");
+        Path targetJarFile = destinationDir.resolve(selectedVersion + UNBLOCK_SUFFIX + ".jar");
         try {
+            Files.createDirectory(destinationDir);
+
             Files.copy(sourceJarFile, targetJarFile);
             Files.copy(sourceJsonFile, targetJsonFile);
 
@@ -78,7 +78,7 @@ public class UnblockButtonListener implements ActionListener {
         for (Object libraryObj : libraries) {
             JSONObject library = (JSONObject) libraryObj;
             String name = (String) library.get("name");
-            //found the mojangs custom netty implementation for block the servers
+            //found the Mojang's custom netty implementation for block the servers
             if (name.startsWith("com.mojang:netty")) {
                 libraries.remove(libraryObj);
                 break;
